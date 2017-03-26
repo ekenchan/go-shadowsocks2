@@ -116,6 +116,7 @@ iperf3 -c localhost -p 1090
 
 ## TODO
 
+- Add shadowsocksR features
 - Test coverage
 - Binary releases for common platforms
 
