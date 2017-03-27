@@ -93,11 +93,14 @@ func Xchacha20(key []byte) (Cipher, error) {
 }
 
 // RC4-MD5
-type rc4md5key []byte
+type rc4md5key struct {
+	key    []byte
+	ivSize int
+}
 
-func (k rc4md5key) IVSize() int                       { return 16 }
-func (k rc4md5key) Decrypter(iv []byte) cipher.Stream { return newRC4MD5Stream(k, iv) }
-func (k rc4md5key) Encrypter(iv []byte) cipher.Stream { return newRC4MD5Stream(k, iv) }
+func (k rc4md5key) IVSize() int                       { return k.ivSize }
+func (k rc4md5key) Decrypter(iv []byte) cipher.Stream { return newRC4MD5Stream(k.key, iv) }
+func (k rc4md5key) Encrypter(iv []byte) cipher.Stream { return newRC4MD5Stream(k.key, iv) }
 
 func newRC4MD5Stream(key, iv []byte) cipher.Stream {
 	h := md5.New()
@@ -113,5 +116,9 @@ func newRC4MD5Stream(key, iv []byte) cipher.Stream {
 }
 
 func RC4MD5(key []byte) (Cipher, error) {
-	return rc4md5key(key), nil
+	return rc4md5key{key, 16}, nil
+}
+
+func RC4MD5_6(key []byte) (Cipher, error) {
+	return rc4md5key{key, 6}, nil
 }
