@@ -52,7 +52,6 @@ var streamList = map[string]struct {
 	"CHACHA20-IETF": {32, shadowstream.Chacha20IETF},
 	"XCHACHA20":     {32, shadowstream.Xchacha20},
 	"RC4-MD5":       {16, shadowstream.RC4MD5},
-	"RC4-MD5-6":     {16, shadowstream.RC4MD5_6},
 	"SALSA20":       {32, shadowstream.Salsa20},
 }
 
