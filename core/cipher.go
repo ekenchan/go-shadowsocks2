@@ -53,6 +53,7 @@ var streamList = map[string]struct {
 	"XCHACHA20":     {32, shadowstream.Xchacha20},
 	"RC4-MD5":       {16, shadowstream.RC4MD5},
 	"RC4-MD5-6":     {16, shadowstream.RC4MD5_6},
+	"SALSA20":       {32, shadowstream.Salsa20},
 }
 
 // ListCipher returns a list of available cipher names sorted alphabetically.

@@ -5,9 +5,11 @@ import (
 	"crypto/cipher"
 	"crypto/md5"
 	"crypto/rc4"
+	"encoding/binary"
 	"strconv"
 
 	"github.com/Yawning/chacha20"
+	"golang.org/x/crypto/salsa20/salsa"
 )
 
 // Cipher generates a pair of stream ciphers for encryption and decryption.
@@ -121,4 +123,55 @@ func RC4MD5(key []byte) (Cipher, error) {
 
 func RC4MD5_6(key []byte) (Cipher, error) {
 	return rc4md5key{key, 6}, nil
+}
+
+// Salsa20
+type salsa20key []byte
+
+func (k salsa20key) IVSize() int                       { return 8 }
+func (k salsa20key) Decrypter(iv []byte) cipher.Stream { return newSalsa20Stream(k, iv) }
+func (k salsa20key) Encrypter(iv []byte) cipher.Stream { return newSalsa20Stream(k, iv) }
+
+func newSalsa20Stream(key, iv []byte) cipher.Stream {
+	var c salsaStreamCipher
+	copy(c.nonce[:], iv[:8])
+	copy(c.key[:], key[:32])
+	return &c
+}
+
+type salsaStreamCipher struct {
+	nonce   [8]byte
+	key     [32]byte
+	counter int
+}
+
+func (c *salsaStreamCipher) XORKeyStream(dst, src []byte) {
+	var buf []byte
+	padLen := c.counter % 64
+	dataSize := len(src) + padLen
+	if cap(dst) >= dataSize {
+		buf = dst[:dataSize]
+	} else if leakyBufSize >= dataSize {
+		buf = leakyBuf.Get()
+		defer leakyBuf.Put(buf)
+		buf = buf[:dataSize]
+	} else {
+		buf = make([]byte, dataSize)
+	}
+
+	var subNonce [16]byte
+	copy(subNonce[:], c.nonce[:])
+	binary.LittleEndian.PutUint64(subNonce[len(c.nonce):], uint64(c.counter/64))
+
+	// It's difficult to avoid data copy here. src or dst maybe slice from
+	// Conn.Read/Write, which can't have padding.
+	copy(buf[padLen:], src[:])
+	salsa.XORKeyStream(buf, buf, &subNonce, &c.key)
+	copy(dst, buf[padLen:])
+
+	c.counter += len(src)
+}
+
+func Salsa20(key []byte) (Cipher, error) {
+	return salsa20key(key), nil
 }
